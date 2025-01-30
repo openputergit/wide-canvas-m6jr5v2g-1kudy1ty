@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cyberpunk Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        body {
+            font-family: 'Share Tech Mono', monospace;
+            background: #1a1a2e;
+            background-image: linear-gradient(45deg, #1a1a2e 25%, transparent 25%), 
+                            linear-gradient(-45deg, #1a1a2e 25%, transparent 25%), 
+                            linear-gradient(45deg, transparent 75%, #1a1a2e 75%), 
+                            linear-gradient(-45deg, transparent 75%, #1a1a2e 75%);
+            background-size: 20px 20px;
+        }
+        .calculator {
+            box-shadow: 0 0 20px #0ff, 
+                       inset 0 0 10px #0ff;
+            animation: glow 2s infinite alternate;
+        }
+        @keyframes glow {
+            from {
+                box-shadow: 0 0 20px #0ff;
+            }
+            to {
+                box-shadow: 0 0 30px #f0f;
+            }
+        }
+        .btn {
+            transition: all 0.3s;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 15px #0ff;
+        }
+        .display {
+            text-shadow: 0 0 5px #0ff;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+    <div class="calculator bg-gray-900 p-6 rounded-2xl w-full max-w-sm">
+        <div class="mb-4">
+            <input type="text" id="display" readonly class="display w-full bg-gray-800 text-cyan-400 text-right p-4 rounded-lg text-2xl" value="0">
+        </div>
+        <div class="grid grid-cols-4 gap-2">
+            <!-- Scientific Functions Row 1 -->
+            <button onclick="calculate('sin')" class="btn bg-purple-700 text-white p-4 rounded-lg hover:bg-purple-600">sin</button>
+            <button onclick="calculate('cos')" class="btn bg-purple-700 text-white p-4 rounded-lg hover:bg-purple-600">cos</button>
+            <button onclick="calculate('tan')" class="btn bg-purple-700 text-white p-4 rounded-lg hover:bg-purple-600">tan</button>
+            <button onclick="calculate('sqrt')" class="btn bg-purple-700 text-white p-4 rounded-lg hover:bg-purple-600">√</button>
+
+            <!-- Scientific Functions Row 2 -->
+            <button onclick="calculate('log')" class="btn bg-purple-700 text-white p-4 rounded-lg hover:bg-purple-600">log</button>
+            <button onclick="calculate('ln')" class="btn bg-purple-700 text-white p-4 rounded-lg hover:bg-purple-600">ln</button>
+            <button onclick="calculate('pow')" class="btn bg-purple-700 text-white p-4 rounded-lg hover:bg-purple-600">x^y</button>
+            <button onclick="calculate('pi')" class="btn bg-purple-700 text-white p-4 rounded-lg hover:bg-purple-600">π</button>
+
+            <!-- Numbers and Operations -->
+            <button onclick="clearDisplay()" class="btn bg-red-600 text-white p-4 rounded-lg hover:bg-red-500">C</button>
+            <button onclick="backspace()" class="btn bg-gray-700 text-white p-4 rounded-lg hover:bg-gray-600">⌫</button>
+            <button onclick="calculate('%')" class="btn bg-gray-700 text-white p-4 rounded-lg hover:bg-gray-600">%</button>
+            <button onclick="appendOperator('/')" class="btn bg-cyan-600 text-white p-4 rounded-lg hover:bg-cyan-500">÷</button>
+
+            <button onclick="appendNumber('7')" class="btn bg-gray-800 text-white p-4 rounded-lg hover:bg-gray-700">7</button>
+            <button onclick="appendNumber('8')" class="btn bg-gray-800 text-white p-4 rounded-lg hover:bg-gray-700">8</button>
+            <button onclick="appendNumber('9')" class="btn bg-gray-800 text-white p-4 rounded-lg hover:bg-gray-700">9</button>
+            <button onclick="appendOperator('*')" class="btn bg-cyan-600 text-white p-4 rounded-lg hover:bg-cyan-500">×</button>
+
+            <button onclick="appendNumber('4')" class="btn bg-gray-800 text-white p-4 rounded-lg hover:bg-gray-700">4</button>
+            <button onclick="appendNumber('5')" class="btn bg-gray-800 text-white p-4 rounded-lg hover:bg-gray-700">5</button>
+            <button onclick="appendNumber('6')" class="btn bg-gray-800 text-white p-4 rounded-lg hover:bg-gray-700">6</button>
+            <button onclick="appendOperator('-')" class="btn bg-cyan-600 text-white p-4 rounded-lg hover:bg-cyan-500">-</button>
+
+            <button onclick="appendNumber('1')" class="btn bg-gray-800 text-white p-4 rounded-lg hover:bg-gray-700">1</button>
+            <button onclick="appendNumber('2')" class="btn bg-gray-800 text-white p-4 rounded-lg hover:bg-gray-700">2</button>
+            <button onclick="appendNumber('3')" class="btn bg-gray-800 text-white p-4 rounded-lg hover:bg-gray-700">3</button>
+            <button onclick="appendOperator('+')" class="btn bg-cyan-600 text-white p-4 rounded-lg hover:bg-cyan-500">+</button>
+
+            <button onclick="appendNumber('0')" class="btn bg-gray-800 text-white p-4 rounded-lg hover:bg-gray-700 col-span-2">0</button>
+            <button onclick="appendNumber('.')" class="btn bg-gray-800 text-white p-4 rounded-lg hover:bg-gray-700">.</button>
+            <button onclick="calculate('=')" class="btn bg-cyan-500 text-white p-4 rounded-lg hover:bg-cyan-400">=</button>
+        </div>
+    </div>
+
+    <script>
+        let display = document.getElementById('display');
+        let currentInput = '0';
+        let lastInput = '';
+        let operation = null;
+        let newNumber = true;
+
+        function updateDisplay() {
+            display.value = currentInput;
+        }
+
+        function appendNumber(num) {
+            if (newNumber) {
+                currentInput = num;
+                newNumber = false;
+            } else {
+                currentInput = currentInput === '0' ? num : currentInput + num;
+            }
+            updateDisplay();
+        }
+
+        function appendOperator(op) {
+            if (operation !== null) {
+                calculate('=');
+            }
+            lastInput = currentInput;
+            operation = op;
+            newNumber = true;
+        }
+
+        function clearDisplay() {
+            currentInput = '0';
+            lastInput = '';
+            operation = null;
+            newNumber = true;
+            updateDisplay();
+        }
+
+        function backspace() {
+            if (currentInput.length > 1) {
+                currentInput = currentInput.slice(0, -1);
+            } else {
+                currentInput = '0';
+            }
+            updateDisplay();
+        }
+
+        function calculate(action) {
+            let result;
+            const current = parseFloat(currentInput);
+
+            switch(action) {
+                case '=':
+                    if (operation === null) return;
+                    const prev = parseFloat(lastInput);
+                    switch(operation) {
+                        case '+': result = prev + current; break;
+                        case '-': result = prev - current; break;
+                        case '*': result = prev * current; break;
+                        case '/': result = prev / current; break;
+                    }
+                    operation = null;
+                    break;
+                case 'sin': result = Math.sin(current * Math.PI / 180); break;
+                case 'cos': result = Math.cos(current * Math.PI / 180); break;
+                case 'tan': result = Math.tan(current * Math.PI / 180); break;
+                case 'sqrt': result = Math.sqrt(current); break;
+                case 'log': result = Math.log10(current); break;
+                case 'ln': result = Math.log(current); break;
+                case 'pow': 
+                    lastInput = current;
+                    operation = 'pow';
+                    newNumber = true;
+                    return;
+                case 'pi': result = Math.PI; break;
+                case '%': result = current / 100; break;
+            }
+
+            currentInput = result.toString();
+            newNumber = true;
+            updateDisplay();
+        }
+
+        // Keyboard support
+        document.addEventListener('keydown', (event) => {
+            if (event.key >= '0' && event.key <= '9' || event.key === '.') {
+                appendNumber(event.key);
+            } else if (event.key === '+' || event.key === '-' || event.key === '*' || event.key === '/') {
+                appendOperator(event.key);
+            } else if (event.key === 'Enter') {
+                calculate('=');
+            } else if (event.key === 'Backspace') {
+                backspace();
+            } else if (event.key === 'Escape') {
+                clearDisplay();
+            }
+        });
+    </script>
+<script>document.body.addEventListener('wheel', e => { if (!e.ctrlKey) return; e.preventDefault(); return }, { passive: false })</script>
+	</body>
+</html>
